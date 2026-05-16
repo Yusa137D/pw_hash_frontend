@@ -1,6 +1,10 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../api_services.dart';
+import 'app_visuals.dart';
 import 'login.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -37,9 +41,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _users = data;
         _totalUsers = data.length;
         _md5Users = data.where((u) => u['hashing_method'] == 'MD5').length;
-        _argon2Users = data
-            .where((u) => u['hashing_method'] == 'Argon2')
-            .length;
+        _argon2Users =
+            data.where((u) => u['hashing_method'] == 'Argon2').length;
         _isLoading = false;
       });
     } else {
@@ -50,19 +53,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
-  // Fungsi untuk menentukan warna badge berdasarkan teks kekuatan password
   Color _getStrengthColor(String strength) {
     switch (strength) {
       case 'Very Strong':
-        return Colors.green[800]!;
+        return Colors.green.shade800;
       case 'Strong':
         return Colors.green;
       case 'Fair':
-        return Colors.orange;
+        return AppPalette.orange;
       case 'Weak':
         return Colors.redAccent;
       case 'Very Weak':
-        return Colors.red[900]!;
+        return Colors.red.shade900;
       default:
         return Colors.grey;
     }
@@ -70,120 +72,515 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Hash disalin ke clipboard!')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Hash disalin ke clipboard!')),
+    );
+  }
+
+  void _showExportComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Fitur Export PDF akan segera hadir!')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('DASHBOARD ADMIN'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchUsers,
-            tooltip: 'Refresh Data',
+      body: AnimatedSecurityBackground(
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 900;
+              return Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isWide ? 48 : 20,
+                    vertical: 28,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1120),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _AdminTopBar(onRefresh: _fetchUsers),
+                        const SizedBox(height: 28),
+                        _isLoading
+                            ? const _LoadingPanel()
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _AdminHeroPanel(
+                                    totalUsers: _totalUsers,
+                                    onExport: _showExportComingSoon,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _MetricGrid(
+                                    totalUsers: _totalUsers,
+                                    md5Users: _md5Users,
+                                    argon2Users: _argon2Users,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _UsersTablePanel(
+                                    users: _users,
+                                    getStrengthColor: _getStrengthColor,
+                                    onCopyHash: _copyToClipboard,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const _AnalysisNotePanel(),
+                                ],
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-          IconButton(
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminTopBar extends StatelessWidget {
+  final VoidCallback onRefresh;
+
+  const _AdminTopBar({required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const BrandBadge(icon: Icons.admin_panel_settings, label: 'Admin Vault'),
+        const Spacer(),
+        Tooltip(
+          message: 'Refresh Data',
+          child: IconButton.filledTonal(
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(.12),
+              foregroundColor: AppPalette.yellow,
+            ),
+            icon: const Icon(Icons.refresh),
+            onPressed: onRefresh,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Tooltip(
+          message: 'Logout',
+          child: IconButton.filled(
+            style: IconButton.styleFrom(
+              backgroundColor: AppPalette.orange,
+              foregroundColor: AppPalette.navy,
+            ),
             icon: const Icon(Icons.logout),
             onPressed: () => Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const LoginScreen()),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LoadingPanel extends StatelessWidget {
+  const _LoadingPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return const GlassPanel(
+      child: SizedBox(
+        height: 260,
+        child: Center(
+          child: CircularProgressIndicator(color: AppPalette.orange),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminHeroPanel extends StatelessWidget {
+  final int totalUsers;
+  final VoidCallback onExport;
+
+  const _AdminHeroPanel({
+    required this.totalUsers,
+    required this.onExport,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 720),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 24 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: GlassPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 78,
+              width: 78,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppPalette.yellow, AppPalette.orange],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppPalette.orange.withOpacity(.28),
+                    blurRadius: 22,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.dashboard_customize_rounded,
+                color: AppPalette.navy,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Dashboard Admin',
+              style: TextStyle(
+                color: AppPalette.ink,
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                height: 1.12,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Pantau $totalUsers akun, metode hashing, dan kekuatan password dalam satu panel analisis yang responsif.',
+              style: TextStyle(
+                color: AppPalette.ink.withOpacity(.64),
+                height: 1.55,
+              ),
+            ),
+            const SizedBox(height: 24),
+            PrimaryGradientButton(
+              label: 'Export Security Report',
+              icon: Icons.picture_as_pdf,
+              onPressed: onExport,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricGrid extends StatelessWidget {
+  final int totalUsers;
+  final int md5Users;
+  final int argon2Users;
+
+  const _MetricGrid({
+    required this.totalUsers,
+    required this.md5Users,
+    required this.argon2Users,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: .92, end: 1),
+      duration: const Duration(milliseconds: 760),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.scale(scale: value, child: child);
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final cards = [
+            _MetricCard(
+              title: 'Total User',
+              count: totalUsers.toString(),
+              icon: Icons.groups_2,
+              color: AppPalette.yellow,
+            ),
+            _MetricCard(
+              title: 'MD5 User',
+              count: md5Users.toString(),
+              icon: Icons.memory,
+              color: AppPalette.orange,
+            ),
+            _MetricCard(
+              title: 'Argon2 User',
+              count: argon2Users.toString(),
+              icon: Icons.security,
+              color: Colors.green,
+            ),
+          ];
+
+          if (constraints.maxWidth < 720) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (int index = 0; index < cards.length; index++) ...[
+                    SizedBox(width: 210, child: cards[index]),
+                    if (index != cards.length - 1) const SizedBox(width: 14),
+                  ],
+                ],
+              ),
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (int index = 0; index < cards.length; index++) ...[
+                Expanded(child: cards[index]),
+                if (index != cards.length - 1) const SizedBox(width: 16),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  final String title;
+  final String count;
+  final IconData icon;
+  final Color color;
+
+  const _MetricCard({
+    required this.title,
+    required this.count,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppPalette.navy.withOpacity(.94),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.20),
+            blurRadius: 26,
+            offset: const Offset(0, 16),
+          ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Row Metric Cards
-                  Row(
-                    children: [
-                      _buildMetricCard(
-                        'Total User',
-                        _totalUsers.toString(),
-                        Colors.blue,
-                      ),
-                      _buildMetricCard(
-                        'MD5 User',
-                        _md5Users.toString(),
-                        Colors.orange,
-                      ),
-                      _buildMetricCard(
-                        'Argon2 User',
-                        _argon2Users.toString(),
-                        Colors.green,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(.18),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            count,
+            style: TextStyle(
+              color: color,
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white.withOpacity(.68),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-                  const Text(
-                    'DATABASE USER & PASSWORD ANALYSIS (zxcvbn)',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
+class _UsersTablePanel extends StatelessWidget {
+  final List<dynamic> users;
+  final Color Function(String strength) getStrengthColor;
+  final void Function(String hash) onCopyHash;
 
-                  // Tabel Data Utama
-                  Card(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
+  const _UsersTablePanel({
+    required this.users,
+    required this.getStrengthColor,
+    required this.onCopyHash,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppPalette.navy.withOpacity(.94),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.22),
+            blurRadius: 30,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Database User & Password Analysis',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 23,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Hasil strength dihitung dari backend menggunakan zxcvbn.',
+            style: TextStyle(color: Colors.white.withOpacity(.62)),
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final tableWidth =
+                  constraints.maxWidth < 860 ? 860.0 : constraints.maxWidth;
+
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: tableWidth),
                       child: DataTable(
+                        columnSpacing: 20,
+                        horizontalMargin: 22,
+                        headingRowHeight: 58,
+                        headingRowColor: MaterialStateProperty.all(
+                          AppPalette.softBlue,
+                        ),
+                        dataRowMinHeight: 60,
+                        dataRowMaxHeight: 68,
                         columns: const [
-                          DataColumn(label: Text('Username')),
-                          DataColumn(label: Text('Algoritma')),
-                          DataColumn(label: Text('Strength (zxcvbn)')),
-                          DataColumn(label: Text('Hash Password')),
-                          DataColumn(label: Text('Aksi')),
+                          DataColumn(
+                            label: _TableHeader(width: 150, label: 'Username'),
+                          ),
+                          DataColumn(
+                            label: _TableHeader(width: 118, label: 'Algoritma'),
+                          ),
+                          DataColumn(
+                            label: _TableHeader(width: 136, label: 'Strength'),
+                          ),
+                          DataColumn(
+                            label: _TableHeader(
+                              width: 260,
+                              label: 'Hash Password',
+                            ),
+                          ),
+                          DataColumn(
+                            label: _TableHeader(
+                              width: 70,
+                              label: 'Aksi',
+                              centered: true,
+                            ),
+                          ),
                         ],
-                        rows: _users.map((user) {
-                          String strengthLabel =
+                        rows: users.map((user) {
+                          final strengthLabel =
                               user['password_strength'] ?? 'Unknown';
-                          String hash = user['password_hash'].toString();
-                          String shortHash = hash.length > 15
-                              ? '${hash.substring(0, 15)}...'
+                          final hash = user['password_hash'].toString();
+                          final shortHash = hash.length > 28
+                              ? '${hash.substring(0, 28)}...'
                               : hash;
 
                           return DataRow(
                             cells: [
-                              DataCell(Text(user['username'])),
-                              DataCell(Text(user['hashing_method'])),
                               DataCell(
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _getStrengthColor(strengthLabel),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                SizedBox(
+                                  width: 150,
                                   child: Text(
-                                    strengthLabel,
+                                    user['username'].toString(),
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ),
                               ),
-                              DataCell(Text(shortHash)),
                               DataCell(
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.copy,
-                                    size: 18,
-                                    color: Colors.blue,
+                                SizedBox(
+                                  width: 118,
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: _MethodBadge(
+                                      method:
+                                          user['hashing_method'].toString(),
+                                    ),
                                   ),
-                                  onPressed: () => _copyToClipboard(hash),
-                                  tooltip: 'Salin Hash',
+                                ),
+                              ),
+                              DataCell(
+                                SizedBox(
+                                  width: 136,
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: _StrengthBadge(
+                                      label: strengthLabel,
+                                      color: getStrengthColor(strengthLabel),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                SizedBox(
+                                  width: 260,
+                                  child: Text(
+                                    shortHash,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontFeatures: [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                SizedBox(
+                                  width: 70,
+                                  child: Center(
+                                    child: Tooltip(
+                                      message: 'Salin Hash',
+                                      child: IconButton(
+                                        icon:
+                                            const Icon(Icons.copy, size: 19),
+                                        color: AppPalette.orange,
+                                        onPressed: () => onCopyHash(hash),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -192,89 +589,158 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
-
-                  // Informasi Tambahan
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: Colors.blueGrey[50],
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blueGrey[100]!),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Catatan Analisis:",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blueGrey,
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          "• Strength dihitung secara real-time menggunakan library zxcvbn pada sisi backend.",
-                        ),
-                        Text(
-                          "• MD5 tanpa salt sangat rentan terhadap Rainbow Table attack meskipun password berstatus 'Strong'.",
-                        ),
-                        Text(
-                          "• Argon2 memberikan perlindungan terbaik terhadap brute-force dan cracking.",
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.picture_as_pdf),
-                    label: const Text('Export Security Report'),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Fitur Export PDF akan segera hadir!'),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildMetricCard(String title, String count, Color color) {
-    return Expanded(
-      child: Card(
-        color: color.withValues(alpha: 0.1),
-        shape: RoundedRectangleBorder(
-          side: BorderSide(color: color, width: 1),
-          borderRadius: BorderRadius.circular(8),
+class _TableHeader extends StatelessWidget {
+  final double width;
+  final String label;
+  final bool centered;
+
+  const _TableHeader({
+    required this.width,
+    required this.label,
+    this.centered = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        label,
+        textAlign: centered ? TextAlign.center : TextAlign.left,
+        style: const TextStyle(
+          color: AppPalette.ink,
+          fontWeight: FontWeight.w900,
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-          child: Column(
+      ),
+    );
+  }
+}
+
+class _MethodBadge extends StatelessWidget {
+  final String method;
+
+  const _MethodBadge({required this.method});
+
+  @override
+  Widget build(BuildContext context) {
+    final isArgon = method == 'Argon2';
+    final color = isArgon ? Colors.green : AppPalette.orange;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withOpacity(.45)),
+      ),
+      child: Text(
+        method,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w900,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _StrengthBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StrengthBadge({
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _AnalysisNotePanel extends StatelessWidget {
+  const _AnalysisNotePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    const notes = [
+      'Strength dihitung secara real-time menggunakan library zxcvbn pada sisi backend.',
+      "MD5 tanpa salt sangat rentan terhadap Rainbow Table attack meskipun password berstatus 'Strong'.",
+      'Argon2 memberikan perlindungan terbaik terhadap brute-force dan cracking.',
+    ];
+
+    return GlassPanel(
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
             children: [
+              Icon(Icons.tips_and_updates, color: AppPalette.orange),
+              SizedBox(width: 10),
               Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                count,
+                'Catatan Analisis',
                 style: TextStyle(
-                  fontSize: 22,
-                  color: color,
-                  fontWeight: FontWeight.bold,
+                  color: AppPalette.ink,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 14),
+          ...notes.map(
+            (note) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    color: AppPalette.orange,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      note,
+                      style: TextStyle(
+                        color: AppPalette.ink.withOpacity(.70),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

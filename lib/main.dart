@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 // Import halaman Login dari folder pages
+import 'pages/app_visuals.dart';
 import 'pages/login.dart';
 
 void main() {
@@ -14,14 +15,27 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Simulasi Keamanan Password',
-      debugShowCheckedModeBanner: false, // Menghilangkan pita "DEBUG" di pojok kanan atas
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // Tema utama aplikasi menggunakan warna dasar biru
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
-        useMaterial3: true, // Wajib true agar SegmentedButton dan UI modern lainnya tampil sempurna
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppPalette.navy,
+          primary: AppPalette.navy,
+          secondary: AppPalette.orange,
+        ),
+        scaffoldBackgroundColor: AppPalette.deepNavy,
+        fontFamily: 'Roboto',
+        inputDecorationTheme: const InputDecorationTheme(
+          labelStyle: TextStyle(color: AppPalette.ink),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: AppPalette.orange,
+            textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
+        useMaterial3: true,
       ),
-      // Menetapkan LoginScreen sebagai halaman pertama yang dimuat
-      home: const LoginScreen(), 
+      home: const LoginScreen(),
     );
   }
 }
