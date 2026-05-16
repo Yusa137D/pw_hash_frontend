@@ -4,6 +4,7 @@ class ApiService {
   // Gunakan 10.0.2.2 jika menggunakan Android Emulator
   // Gunakan 127.0.0.1 jika menggunakan Chrome/Windows
   static const String _baseUrl = 'http://127.0.0.1:5000';
+  static const String exportPdfUrl = '$_baseUrl/export-pdf';
   static final Dio _dio = Dio(BaseOptions(baseUrl: _baseUrl));
 
   // Fungsi Register

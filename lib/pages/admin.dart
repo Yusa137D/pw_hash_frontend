@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../api_services.dart';
+import '../pdf_launcher.dart';
 import 'app_visuals.dart';
 import 'login.dart';
 
@@ -15,10 +16,11 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<dynamic> _users = [];
   bool _isLoading = true;
+  bool _isExporting = false;
 
   int _totalUsers = 0;
   int _md5Users = 0;
-  int _sha256Users = 0; 
+  int _sha256Users = 0;
 
   @override
   void initState() {
@@ -75,10 +77,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  void _showExportComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fitur Export PDF akan segera hadir!')),
-    );
+  Future<void> _openSecurityReportPdf() async {
+    setState(() => _isExporting = true);
+
+    final pdfUri = Uri.parse(ApiService.exportPdfUrl);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final opened = await openPdfUrl(pdfUri.toString());
+
+      if (!opened && mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('PDF gagal dibuka. Pastikan backend Flask berjalan.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('PDF gagal dibuka: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
   }
 
   @override
@@ -109,7 +137,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 children: [
                                   _AdminHeroPanel(
                                     totalUsers: _totalUsers,
-                                    onExport: _showExportComingSoon,
+                                    isExporting: _isExporting,
+                                    onExport: _openSecurityReportPdf,
                                   ),
                                   const SizedBox(height: 20),
                                   _MetricGrid(
@@ -200,10 +229,12 @@ class _LoadingPanel extends StatelessWidget {
 
 class _AdminHeroPanel extends StatelessWidget {
   final int totalUsers;
+  final bool isExporting;
   final VoidCallback onExport;
 
   const _AdminHeroPanel({
     required this.totalUsers,
+    required this.isExporting,
     required this.onExport,
   });
 
@@ -268,8 +299,9 @@ class _AdminHeroPanel extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             PrimaryGradientButton(
-              label: 'Export Security Report',
+              label: isExporting ? 'Membuka PDF...' : 'Export Security Report',
               icon: Icons.picture_as_pdf,
+              isLoading: isExporting,
               onPressed: onExport,
             ),
           ],
@@ -282,7 +314,7 @@ class _AdminHeroPanel extends StatelessWidget {
 class _MetricGrid extends StatelessWidget {
   final int totalUsers;
   final int md5Users;
-  final int sha256Users; 
+  final int sha256Users;
 
   const _MetricGrid({
     required this.totalUsers,
@@ -315,7 +347,7 @@ class _MetricGrid extends StatelessWidget {
               color: AppPalette.orange,
             ),
             _MetricCard(
-              title: 'SHA-256 User', 
+              title: 'SHA-256 User',
               count: sha256Users.toString(),
               icon: Icons.security,
               color: Colors.green,
