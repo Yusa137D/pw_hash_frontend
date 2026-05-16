@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_visuals.dart';
 import 'login.dart';
+import 'developer.dart';
 
 class UserDashboardScreen extends StatelessWidget {
   final String username;
@@ -25,6 +26,7 @@ class UserDashboardScreen extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth >= 840;
+
               return Center(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
@@ -38,6 +40,7 @@ class UserDashboardScreen extends StatelessWidget {
                       children: [
                         const _TopBar(),
                         const SizedBox(height: 28),
+
                         isWide
                             ? Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,7 +49,9 @@ class UserDashboardScreen extends StatelessWidget {
                                     flex: 7,
                                     child: _WelcomePanel(username: username),
                                   ),
+
                                   const SizedBox(width: 24),
+
                                   Expanded(
                                     flex: 5,
                                     child: _SecurityPanel(
@@ -60,7 +65,9 @@ class UserDashboardScreen extends StatelessWidget {
                             : Column(
                                 children: [
                                   _WelcomePanel(username: username),
+
                                   const SizedBox(height: 20),
+
                                   _SecurityPanel(
                                     method: method,
                                     strength: strength,
@@ -81,8 +88,14 @@ class UserDashboardScreen extends StatelessWidget {
   }
 
   Color _strengthColor(String value) {
-    if (value.contains('Strong')) return Colors.green;
-    if (value.contains('Very Weak')) return Colors.red;
+    if (value.contains('Strong')) {
+      return Colors.green;
+    }
+
+    if (value.contains('Very Weak')) {
+      return Colors.red;
+    }
+
     return AppPalette.orange;
   }
 }
@@ -95,7 +108,28 @@ class _TopBar extends StatelessWidget {
     return Row(
       children: [
         const BrandBadge(icon: Icons.shield_moon_outlined, label: 'User Vault'),
+
         const Spacer(),
+
+        Tooltip(
+          message: 'Developer',
+          child: IconButton.filled(
+            style: IconButton.styleFrom(
+              backgroundColor: AppPalette.yellow,
+              foregroundColor: AppPalette.navy,
+            ),
+            icon: const Icon(Icons.groups),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DeveloperScreen()),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
         Tooltip(
           message: 'Logout',
           child: IconButton.filled(
@@ -161,7 +195,9 @@ class _WelcomePanel extends StatelessWidget {
                 size: 42,
               ),
             ),
+
             const SizedBox(height: 24),
+
             Text(
               'Selamat datang, $username',
               style: const TextStyle(
@@ -171,7 +207,9 @@ class _WelcomePanel extends StatelessWidget {
                 height: 1.15,
               ),
             ),
+
             const SizedBox(height: 12),
+
             Text(
               'Akun kamu sudah masuk ke area dashboard. Informasi keamanan password diringkas agar mudah dibaca tanpa tampilan yang membosankan.',
               style: TextStyle(
@@ -179,7 +217,9 @@ class _WelcomePanel extends StatelessWidget {
                 height: 1.55,
               ),
             ),
+
             const SizedBox(height: 24),
+
             Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -189,6 +229,7 @@ class _WelcomePanel extends StatelessWidget {
                   label: 'Credential',
                   value: 'Active',
                 ),
+
                 _MiniStat(
                   icon: Icons.verified,
                   label: 'Session',
@@ -248,26 +289,34 @@ class _SecurityPanel extends StatelessWidget {
                 fontWeight: FontWeight.w900,
               ),
             ),
+
             const SizedBox(height: 8),
+
             Text(
               'Ringkasan metode perlindungan akun.',
               style: TextStyle(color: Colors.white.withOpacity(.62)),
             ),
+
             const SizedBox(height: 24),
+
             _InfoTile(
               icon: Icons.lock,
               label: 'Metode Keamanan',
               value: method,
               color: AppPalette.yellow,
             ),
+
             const SizedBox(height: 14),
+
             _InfoTile(
               icon: Icons.shield,
               label: 'Kekuatan Password',
               value: strength,
               color: strengthColor,
             ),
+
             const SizedBox(height: 24),
+
             ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
@@ -277,7 +326,9 @@ class _SecurityPanel extends StatelessWidget {
                 valueColor: AlwaysStoppedAnimation(strengthColor),
               ),
             ),
+
             const SizedBox(height: 16),
+
             Text(
               'Sistem memakai hashing satu arah untuk menjaga integritas data akun.',
               textAlign: TextAlign.center,
@@ -294,8 +345,14 @@ class _SecurityPanel extends StatelessWidget {
   }
 
   double _progressForStrength(String value) {
-    if (value.contains('Strong')) return .94;
-    if (value.contains('Very Weak')) return .22;
+    if (value.contains('Strong')) {
+      return .94;
+    }
+
+    if (value.contains('Very Weak')) {
+      return .22;
+    }
+
     return .58;
   }
 }
@@ -331,7 +388,9 @@ class _InfoTile extends StatelessWidget {
             ),
             child: Icon(icon, color: color),
           ),
+
           const SizedBox(width: 14),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +403,9 @@ class _InfoTile extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
                   value,
                   style: TextStyle(
@@ -385,7 +446,9 @@ class _MiniStat extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: AppPalette.orange, size: 20),
+
           const SizedBox(width: 9),
+
           Text(
             '$label: ',
             style: TextStyle(
@@ -393,6 +456,7 @@ class _MiniStat extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+
           Text(
             value,
             style: const TextStyle(
