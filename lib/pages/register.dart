@@ -313,9 +313,10 @@ class _RegisterForm extends StatelessWidget {
                     label: Text('MD5'),
                     icon: Icon(Icons.memory),
                   ),
+                  // PERBAIKAN: Diubah menjadi SHA-256
                   ButtonSegment<String>(
-                    value: 'Argon2',
-                    label: Text('Argon2'),
+                    value: 'SHA-256',
+                    label: Text('SHA-256'),
                     icon: Icon(Icons.security),
                   ),
                 ],

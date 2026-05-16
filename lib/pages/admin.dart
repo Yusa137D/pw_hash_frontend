@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -20,7 +18,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   int _totalUsers = 0;
   int _md5Users = 0;
-  int _argon2Users = 0;
+  int _sha256Users = 0; 
 
   @override
   void initState() {
@@ -41,8 +39,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _users = data;
         _totalUsers = data.length;
         _md5Users = data.where((u) => u['hashing_method'] == 'MD5').length;
-        _argon2Users =
-            data.where((u) => u['hashing_method'] == 'Argon2').length;
+        _sha256Users =
+            data.where((u) => u['hashing_method'] == 'SHA-256').length;
         _isLoading = false;
       });
     } else {
@@ -117,7 +115,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   _MetricGrid(
                                     totalUsers: _totalUsers,
                                     md5Users: _md5Users,
-                                    argon2Users: _argon2Users,
+                                    sha256Users: _sha256Users,
                                   ),
                                   const SizedBox(height: 24),
                                   _UsersTablePanel(
@@ -157,7 +155,7 @@ class _AdminTopBar extends StatelessWidget {
           message: 'Refresh Data',
           child: IconButton.filledTonal(
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(.12),
+              backgroundColor: Colors.white.withValues(alpha: .12),
               foregroundColor: AppPalette.yellow,
             ),
             icon: const Icon(Icons.refresh),
@@ -238,7 +236,7 @@ class _AdminHeroPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: AppPalette.orange.withOpacity(.28),
+                    color: AppPalette.orange.withValues(alpha: .28),
                     blurRadius: 22,
                     offset: const Offset(0, 12),
                   ),
@@ -264,7 +262,7 @@ class _AdminHeroPanel extends StatelessWidget {
             Text(
               'Pantau $totalUsers akun, metode hashing, dan kekuatan password dalam satu panel analisis yang responsif.',
               style: TextStyle(
-                color: AppPalette.ink.withOpacity(.64),
+                color: AppPalette.ink.withValues(alpha: .64),
                 height: 1.55,
               ),
             ),
@@ -284,12 +282,12 @@ class _AdminHeroPanel extends StatelessWidget {
 class _MetricGrid extends StatelessWidget {
   final int totalUsers;
   final int md5Users;
-  final int argon2Users;
+  final int sha256Users; 
 
   const _MetricGrid({
     required this.totalUsers,
     required this.md5Users,
-    required this.argon2Users,
+    required this.sha256Users,
   });
 
   @override
@@ -317,8 +315,8 @@ class _MetricGrid extends StatelessWidget {
               color: AppPalette.orange,
             ),
             _MetricCard(
-              title: 'Argon2 User',
-              count: argon2Users.toString(),
+              title: 'SHA-256 User', 
+              count: sha256Users.toString(),
               icon: Icons.security,
               color: Colors.green,
             ),
@@ -371,12 +369,12 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppPalette.navy.withOpacity(.94),
+        color: AppPalette.navy.withValues(alpha: .94),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(.12)),
+        border: Border.all(color: Colors.white.withValues(alpha: .12)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.20),
+            color: Colors.black.withValues(alpha: .20),
             blurRadius: 26,
             offset: const Offset(0, 16),
           ),
@@ -388,7 +386,7 @@ class _MetricCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(.18),
+              color: color.withValues(alpha: .18),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color),
@@ -406,7 +404,7 @@ class _MetricCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(.68),
+              color: Colors.white.withValues(alpha: .68),
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -432,12 +430,12 @@ class _UsersTablePanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppPalette.navy.withOpacity(.94),
+        color: AppPalette.navy.withValues(alpha: .94),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withOpacity(.12)),
+        border: Border.all(color: Colors.white.withValues(alpha: .12)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(.22),
+            color: Colors.black.withValues(alpha: .22),
             blurRadius: 30,
             offset: const Offset(0, 18),
           ),
@@ -457,7 +455,7 @@ class _UsersTablePanel extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Hasil strength dihitung dari backend menggunakan zxcvbn.',
-            style: TextStyle(color: Colors.white.withOpacity(.62)),
+            style: TextStyle(color: Colors.white.withValues(alpha: .62)),
           ),
           const SizedBox(height: 18),
           LayoutBuilder(
@@ -478,7 +476,7 @@ class _UsersTablePanel extends StatelessWidget {
                         columnSpacing: 20,
                         horizontalMargin: 22,
                         headingRowHeight: 58,
-                        headingRowColor: MaterialStateProperty.all(
+                        headingRowColor: WidgetStateProperty.all(
                           AppPalette.softBlue,
                         ),
                         dataRowMinHeight: 60,
@@ -633,15 +631,15 @@ class _MethodBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isArgon = method == 'Argon2';
-    final color = isArgon ? Colors.green : AppPalette.orange;
+    final isSha = method == 'SHA-256';
+    final color = isSha ? Colors.green : AppPalette.orange;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(.12),
+        color: color.withValues(alpha: .12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(.45)),
+        border: Border.all(color: color.withValues(alpha: .45)),
       ),
       child: Text(
         method,
@@ -655,6 +653,7 @@ class _MethodBadge extends StatelessWidget {
   }
 }
 
+// PERBAIKAN: Class _StrengthBadge yang hilang ditambahkan kembali di sini.
 class _StrengthBadge extends StatelessWidget {
   final String label;
   final Color color;
@@ -692,7 +691,7 @@ class _AnalysisNotePanel extends StatelessWidget {
     const notes = [
       'Strength dihitung secara real-time menggunakan library zxcvbn pada sisi backend.',
       "MD5 tanpa salt sangat rentan terhadap Rainbow Table attack meskipun password berstatus 'Strong'.",
-      'Argon2 memberikan perlindungan terbaik terhadap brute-force dan cracking.',
+      'SHA-256 adalah algoritma modern, namun tanpa penggunaan salt, hash-nya tetap dapat diprediksi.',
     ];
 
     return GlassPanel(
@@ -731,7 +730,7 @@ class _AnalysisNotePanel extends StatelessWidget {
                     child: Text(
                       note,
                       style: TextStyle(
-                        color: AppPalette.ink.withOpacity(.70),
+                        color: AppPalette.ink.withValues(alpha: .70),
                         height: 1.4,
                       ),
                     ),
